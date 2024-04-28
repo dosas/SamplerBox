@@ -22,27 +22,15 @@ You can use a ready-to-use ISO image from the [Releases](https://github.com/jose
 
     ~~~
     sudo apt update
-    sudo apt -y install git python3-pip python3-smbus python3-numpy libportaudio2 libasound2-dev
+    sudo apt -y install git python3-pip libportaudio2 libopenblas-dev libasound2-dev
     sudo apt -y install raspberrypi-kernel  # quite long to install, do it only if necessary, it solves a "no sound before 25 second on boot" problem
-    sudo pip3 install cython cffi sounddevice pyserial
-    ~~~
-
-    For python < 3.9
-    ~~~
-    sudo pip3 install rtmidi-python
-    ~~~
-
-    For python >= 3.9
-    ~~~
-    sudo pip3 install python-rtmidi
     ~~~
 
 1. Download SamplerBox and build it with:
-
     ~~~
     git clone https://github.com/josephernest/SamplerBox.git
     cd SamplerBox
-    sudo python3 setup.py build_ext --inplace
+    sudo python3 -m pip install .
     ~~~
 
 1. Reboot the Pi, and run the soft with:
