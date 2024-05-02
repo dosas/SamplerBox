@@ -17,6 +17,7 @@ def my_build_ext(pars):
 setup(ext_modules=[Extension(name="samplerbox_audio",
                              sources=["samplerbox_audio.pyx"])],
       cmdclass={'build_ext': my_build_ext},
+      name='SamplerBox',
       setup_requires=[
           "cython",
           "numpy"
