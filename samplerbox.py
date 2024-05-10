@@ -257,10 +257,10 @@ def ActuallyLoad():
         dirname = os.path.join(samplesdir, basename)
     if not basename:
         print('Preset empty: %s' % preset)
-        display("E%03d" % preset)
+        display(f"preset {preset} empty")
         return
     print('Preset loading: %s (%s)' % (preset, basename))
-    display("L%03d" % preset)
+    display(f"loading {preset} {basename}")
     definitionfname = os.path.join(dirname, "definition.txt")
     if os.path.isfile(definitionfname):
         with open(definitionfname, 'r') as definitionfile:
@@ -319,10 +319,10 @@ def ActuallyLoad():
                     pass
     if len(initial_keys) > 0:
         print('Preset loaded: ' + str(preset))
-        display("%04d" % preset)
+        display(f"{preset}: {basename}")
     else:
         print('Preset empty: ' + str(preset))
-        display("E%03d" % preset)
+        display(f"Preset {preset} {basename} empty")
 
 #########################################
 # OPEN AUDIO DEVICE
@@ -389,6 +389,14 @@ if USE_I2C_7SEGMENTDISPLAY:  # requires: 1) i2c-dev in /etc/modules and 2) dtpar
             time.sleep(0.002)
     display('----')
     time.sleep(0.5)
+elif USE_I2C_DISPLAY:
+    from RPLCD.i2c import CharLCD
+    lcd = CharLCD(i2c_expander='PCF8574', address=0x27, port=I2C_PORT, cols=16, rows=2, dotsize=8)
+    def display(s):
+        lcd.clear()
+        lcd.write_string(s)
+    print("SampleShark")
+    display('SampleShark')
 else:
     def display(s):
         pass
