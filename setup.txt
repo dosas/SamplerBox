@@ -1,0 +1,152 @@
+# install dependencies
+======================
+
+sudo apt update
+sudo apt -y install git python3-pip python3-virtualenv libportaudio2 libopenblas-dev libasound2-dev i2c-tools pmount ffmpeg normalize-audio vim
+
+# clone and install samplerbox
+# ============================
+
+git clone https://github.com/dosas/SamplerBox.git
+python -m venv ~/venv
+#source ~/venv/bin/activate
+/home/pi/venv/bin/python -m pip install .
+
+# use su
+========
+sudo su -l
+
+# enable autostart
+# ================
+
+cat > /etc/systemd/system/samplerbox.service << EOF
+[Unit]
+Description=Starts SamplerBox
+# systemctl -l |grep sound-card
+Requires=sound.target
+After=sound.target
+[Service]
+Type=simple
+ExecStart=/home/pi/venv/bin/python /home/pi/SamplerBox/samplerbox.py
+WorkingDirectory=/home/pi/SamplerBox/
+[Install]
+WantedBy=sound.target
+RequiredBy=basic.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl start samplerbox.service
+sudo systemctl enable samplerbox.service
+
+
+# automount usb
+# =============
+
+cat > /etc/udev/rules.d/99-local.rules << EOF
+KERNEL=="sd[a-z][0-9]", SUBSYSTEMS=="usb", ACTION=="add", RUN+="/bin/systemctl start usb-mount@%k.service"
+KERNEL=="sd[a-z][0-9]", SUBSYSTEMS=="usb", ACTION=="remove", RUN+="/bin/systemctl stop usb-mount@%k.service"
+EOF
+
+udevadm control --reload-rules
+
+cat > /etc/systemd/system/usb-mount@.service << EOF
+[Unit]
+Description=Mount USB Drive on %i
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=/usr/bin/pmount --umask 000 /dev/%i samples
+ExecStop=/usr/bin/pumount /dev/%i
+EOF
+
+sudo systemctl daemon-reload
+
+
+# normalize
+===========
+
+cat > /etc/systemd/system/normalize.service << EOF
+[Unit]
+Description=Conversion and normalization script
+Requires=media-samples.mount
+After=media-samples.mount
+[Service]
+ExecStart=/usr/local/bin/normalize.sh
+[Install]
+WantedBy=media-samples.mount
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl start normalize.service
+sudo systemctl enable normalize.service
+
+
+# shutdown button
+=================
+
+# in sudo vim /boot/firmware/config.txt
+dtoverlay=gpio-shutdown,gpio_pin=4,active_low=1,gpio_pull=up
+
+sed -i '/HandlePowerKey=poweroff/s/^#//g' /etc/systemd/logind.conf
+
+
+# I2C display
+=============
+# enable i2c ins raspi-config
+
+sudo i2cdetect -y 1
+
+# turn display off
+i2cset -y 1 0x27 0x00 0x01
+
+cat > /etc/systemd/system/i2creset.service << EOF
+[Unit]
+Description=reset I2C display
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStop=i2cset -y 1 0x27 0x00 0x00
+ExecStart=i2cset -y 1 0x27 0x00 0x00
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl daemon-reload
+sudo systemctl start i2creset.service
+sudo systemctl enable i2creset.service
+
+# DAC pro setup
+=============
+# detect
+aplay -l
+
+# faster boot
+=============
+# /boot/firmware/config.txt
+disable_splash=1
+boot_delay=0
+dtoverlay=disable-wifi
+dtoverlay=disable-bt
+
+# /boot/firmware/cmdline.txt
+fsck.mode=skip
+quiet
+
+sudo systemctl disable avahi-daemon.service
+sudo systemctl disable keyboard-setup.service
+sudo systemctl disable systemd-timesyncd.service
+sudo systemctl disable triggerhappy.service
+#sudo systemctl disable dpkg-db-backup.service
+
+sudo systemctl unmask ModemManager.service
+sudo systemctl disable ModemManager.service
+# sudo apt-get purge modemmanager
+
+
+# read only
+===========
+# ensure usb is disconnected
+sudo raspi-config
+
+# to remount /boot/firmware/config.txt
+sudo mount -o remount,rw /boot/firmware
