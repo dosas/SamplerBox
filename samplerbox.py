@@ -23,7 +23,10 @@ import os
 import re
 import sounddevice
 import threading
-from chunk import Chunk
+try:
+    from chunk import Chunk
+except ModuleNotFoundError:
+    from chunkmuncher.chunk import Chunk
 import struct
 try:
     import rtmidi_python as rtmidi

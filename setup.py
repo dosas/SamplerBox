@@ -24,6 +24,7 @@ setup(ext_modules=[Extension(name="samplerbox_audio",
       ],
       install_requires=[
           'cffi',
+          'chunkmuncher',
           'numpy',
           'pyserial',
           'python-rtmidi; python_version >= "3.9"',
