@@ -14,6 +14,8 @@
 #########################################
 
 from config import *
+import audioop
+import math
 import wave
 import time
 import numpy
@@ -121,7 +123,18 @@ class Sound:
         else:
             self.loop = -1
             self.nframes = wf.getnframes()
-        self.data = self.frames2array(wf.readframes(self.nframes), wf.getsampwidth(), wf.getnchannels())
+
+        dB = GLOBAL_VOLUME_DB + (10 * math.log10((1 + self.velocity) / 128))
+        volume = 10 ** (dB / 20)
+
+        self.data = self.frames2array(
+            audioop.mul(
+                wf.readframes(self.nframes),
+                wf.getsampwidth(),
+                volume,
+            ),
+            wf.getsampwidth(), wf.getnchannels())
+
         wf.close()
 
     def play(self, note):
@@ -149,7 +162,7 @@ playingnotes = {}
 sustainplayingnotes = []
 sustain = False
 playingsounds = []
-globalvolume = 10 ** (-12.0/20)  # -12dB default global volume
+globalvolume = 10 ** (GLOBAL_VOLUME_DB / 20)
 globaltranspose = 0
 
 #########################################
@@ -249,7 +262,7 @@ def ActuallyLoad():
     global globalvolume, globaltranspose
     playingsounds = []
     samples = {}
-    globalvolume = 10 ** (-12.0/20)  # -12dB default global volume
+    globalvolume = 10 ** (GLOBAL_VOLUME_DB / 20)
     globaltranspose = 0
     samplesdir = SAMPLES_DIR if os.listdir(SAMPLES_DIR) else '.'      # use current folder (containing 0 Saw) if no user media containing samples has been found
     basename = next((f for f in os.listdir(samplesdir) if f.startswith("%d " % preset)), None)      # or next(glob.iglob("blah*"), None)
@@ -299,7 +312,8 @@ def ActuallyLoad():
                 return
             file = os.path.join(dirname, "%d.wav" % midinote)
             if os.path.isfile(file):
-                samples[midinote, 127] = Sound(file, midinote, 127)
+                for velocity in range(128):
+                    samples[midinote, velocity] = Sound(file, midinote, velocity)
     initial_keys = set(samples.keys())
     for midinote in range(128):
         lastvelocity = None

@@ -3,6 +3,7 @@
 # CONFIG
 #########################################
 
+GLOBAL_VOLUME_DB = -6
 AUDIO_DEVICE_ID = 0                     # change this number to use another soundcard
 SAMPLES_DIR = "/media/samples"          # The root directory containing the sample-sets. Example: "/media/" to look for samples on a USB stick / SD card
 MAX_POLYPHONY = 80                      # This can be set higher, but 80 is a safe value
