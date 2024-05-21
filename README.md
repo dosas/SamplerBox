@@ -22,7 +22,7 @@ You can use a ready-to-use ISO image from the [Releases](https://github.com/jose
 
     ~~~
     sudo apt update
-    sudo apt -y install git python3-pip libportaudio2 libopenblas-dev libasound2-dev i2c-tools
+    sudo apt -y install git python3-pip libportaudio2 libopenblas-dev libasound2-dev i2c-tools pmount ffmpeg normalize-audio
     sudo apt -y install raspberrypi-kernel  # quite long to install, do it only if necessary, it solves a "no sound before 25 second on boot" problem
     ~~~
 
