@@ -201,7 +201,6 @@ def midi_callback_common(message, timestamp):
     global playingnotes, sustain, sustainplayingnotes
     global preset
     messagetype = message[0] >> 4
-    messagechannel = (message[0] & 15) + 1
     note = message[1] if len(message) > 1 else None
     midinote = note
     velocity = message[2] if len(message) > 2 else None
