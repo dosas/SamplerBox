@@ -7,9 +7,9 @@ sudo apt -y install git python3-pip python3-virtualenv libportaudio2 libopenblas
 # clone and install samplerbox
 # ============================
 
-git clone https://github.com/dosas/SamplerBox.git
 python -m venv ~/venv
-#source ~/venv/bin/activate
+git clone https://github.com/dosas/SamplerBox.git
+cd SamplerBox
 /home/pi/venv/bin/python -m pip install .
 
 # use su
@@ -64,6 +64,7 @@ sudo systemctl daemon-reload
 
 # normalize
 ===========
+cp /home/pi/SamplerBox/normalize.sh /usr/local/bin/
 
 cat > /etc/systemd/system/normalize.service << EOF
 [Unit]
@@ -142,6 +143,63 @@ sudo systemctl unmask ModemManager.service
 sudo systemctl disable ModemManager.service
 # sudo apt-get purge modemmanager
 
+
+# access point
+==============
+sudo apt install dnsmasq hostapd dhcpcd5
+sudo systemctl stop dnsmasq
+sudo systemctl stop hostapd
+sudo systemctl stop dhcpcd
+
+# static IP
+# /etc/dhcpcd.conf
+interface wlan0
+    static ip_address=10.10.1.2/24
+    nohook wpa_supplicant
+
+sudo systemctl enable dhcpcd
+sudo systemctl start dhcpcd
+
+# dhcp
+sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig
+# /etc/dnsmasq.conf
+interface=wlan0
+no-dhcp-interface=eth0
+dhcp-range=10.10.1.3,10.10.1.20,255.255.255.0,24h
+
+dnsmasq --test -C /etc/dnsmasq.conf
+sudo systemctl enable dnsmasq
+sudo systemctl start dnsmasq
+
+# access point
+# /etc/hostapd/hostapd.conf
+
+country_code=DE
+interface=wlan0
+ssid=SampleShark
+channel=9
+auth_algs=1
+wpa=2
+wpa_passphrase=<replace-me>
+wpa_key_mgmt=WPA-PSK
+wpa_pairwise=TKIP CCMP
+rsn_pairwise=CCMP
+
+# /etc/default/hostapd
+RUN_DAEMON=yes
+DAEMON_CONF="/etc/hostapd/hostapd.conf"
+
+# /etc/systemd/system/multi-user.target.wants/hostapd.service.
+ExecStartPre=/bin/sleep 15
+
+sudo systemctl unmask hostapd
+sudo systemctl enable hostapd
+sudo systemctl start hostapd
+
+# remote script
+===============
+cp /home/pi/SamplerBox/remote.py /home/pi/
+chmod u+x remote.py
 
 # read only
 ===========
